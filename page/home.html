@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aeroponics Dashboard</title>
+    <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1><span>Aero</span>ponics</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#">ข้อมูลเซ็นเซอร์</a></li>
+                <li id="requestMenu"><a href="#">ส่งคำขอเป็นผู้ดูเเล</a></li>
+                <li id="requestStatusMenu"><a href="#">คำขอเป็นผู้ดูเเล</a></li>
+                <li>
+                    <a href="#" id="accountMenu"></a>
+                    <ul class="dropdown">
+                        <li id="profile"><a href="#">ข้อมูลส่วนตัว</a></li>
+                        <li id="editpermission"><a href="#">บัญชีผู้ดูเเลระบบทั้งหมด</a></li>
+                        <li style="color: red;"><a href="login.html">ออกจากระบบ</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="popupOverlay"></div>
+        <div id="adminPopup">
+            <p>ตอนนี้คุณได้เป็นผู้ดูแลระบบแล้ว!</p>
+            <p>กรุณากรอก TokenLineNotify</p>
+             <input type="tokenline" id="tokenline" required>
+            <button id="closePopup">กรอกภายหลัง</button>
+            <button id="submitToken" type="submit">ตกลง</button>
+        </div>
+        
+        <div class="icons">
+            <i class="notification-icon"></i>
+            <i class="user-icon"></i>
+        </div>
+    </header>
+
+    <main>
+        <h2>ภายในห้องปลูก <span id="lightIntensity"></span></h2>
+        <div class="tray-container">
+            <div class="tray">
+                <div class="editable-container">
+                    <span class="editable-text" id="editableName">แปลงปลูกที่ 1</span>
+                    <button class="edit-icon" id="editIcon"><ion-icon name="create-outline"></ion-icon></button>
+                    <input type="text" class="edit-input" id="editInput" />
+                </div>
+                <div class="water-level">
+                    <p>ระดับน้ำ</p>
+                    <div class="bar">
+                        <div class="fill" id="waterBar"></div>
+                    </div>
+                </div>
+                <p>ระดับค่าPH: <span id="ph">10%</span></p>
+                <p>อุณหภูมิ: <span id="temperature">30°C</span></p>
+                <p>ความชื้น: <span id="humidity">18%</span></p>
+                <div class="settime">
+                    <p>เวลาให้น้ำ : เปิด <span id="onTime">3</span> นาที ปิด <span id="offTime">8</span> นาที</p>
+                    <button id="settingsButton"><ion-icon name="settings-outline"></ion-icon></button>
+                </div>
+                <div>
+                    <p>เวลาที่เหลือในการเปิดปั๊ม: <span id="onTimeCountdown">00:00</span></p>
+                    <p>เวลาที่เหลือในการปิดปั๊ม: <span id="offTimeCountdown">00:00</span></p>
+                </div>
+                
+                <!-- ตั้งเวลาและนับถอยหลัง -->
+                <div id="settingsModal" style="display: none;">
+                    <label for="onTimeInput">เปิด (นาที):</label>
+                    <input type="number" id="onTimeInput" min="0" max="60" value="3" />
+                    <label for="offTimeInput">ปิด (นาที):</label>
+                    <input type="number" id="offTimeInput" min="0" max="60" value="8" />
+                    <button id="saveSettingsButton">บันทึก</button>
+                </div>
+
+                <div class="control" id="controlpump">
+                    <p>ปั๊มน้ำ : <button id="toggleButton" class="toggle on"></button></p>   
+                    <p id="pumpStatus"></p> 
+                </div>
+                
+            </div>
+        </div>
+    </main>
+    
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
+    <!-- Link to external script -->
+    <script src="/script/home.js"></script>
+    <script>
+            document.addEventListener('DOMContentLoaded', function () {
+            // ดึงค่าจาก URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const uid = urlParams.get('uid');
+
+            // ใช้งาน userStatus ตามที่ต้องการ
+            console.log('UserID:', uid);
+
+            // ตรวจสอบว่ามี uid ไหม
+            if (uid) {
+                // ดึงค่า status ของผู้ใช้จาก Firebase โดยใช้ uid
+                fetchUserStatusFromDatabase(uid)
+                    .then(userData  => {
+                        const { uid, fname, lname, status , popupadmin } = userData;
+
+                        //console.log('NOW IS --->:', uid, fname, lname, status , popupadmin);
+
+                        document.getElementById('accountMenu').innerHTML = `${fname} ${lname} <ion-icon name="chevron-down-outline"></ion-icon>`;
+
+                        // จัดการสถานะของผู้ใช้
+                        handleStatus(parseInt(status));
+                        checkAndShowAdminNotification(uid,status,popupadmin);
+
+                    })
+                    .catch(error => {
+                        console.error('Error fetching user status:', error);
+                    });
+            } else {
+                console.error('ไม่พบ UID ใน URL');
+            }
+
+            // ฟังก์ชันตรวจสอบและแสดง popup เมื่อผู้ใช้กลายเป็น admin
+            function checkAndShowAdminNotification(uid,userStatus , popupadmin) {
+                if (userStatus === 1 && popupadmin === false ) { // ถ้าสถานะเป็น admin และยังไม่เคยเห็น popup
+                    showAdminPopup(); // แสดง popup
+                    updateUserPopupStatus(uid);
+                }
+            }
+
+            // ฟังก์ชันแสดง popup
+            function showAdminPopup() {
+                document.getElementById('adminPopup').style.display = 'block';
+                document.getElementById('popupOverlay').style.display = 'block';
+            }
+
+            // ฟังก์ชันปิด popup
+            document.getElementById('closePopup').addEventListener('click', function () {
+                document.getElementById('adminPopup').style.display = 'none';
+                document.getElementById('popupOverlay').style.display = 'none';
+            });
+
+            // ฟังก์ชันเพื่ออัปเดตค่าฟิลด์ hasSeenAdminPopup
+            function updateUserPopupStatus(uid) {
+                fetch(`http://localhost:3000/api/users/update/${uid}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                })
+                .catch(error => console.error('Error updating user status:', error));
+            }
+
+
+            // ฟังก์ชันเพื่อจัดการค่า status
+            function handleStatus(statusValue) {
+                if (statusValue === 0) {
+                    document.getElementById('requestStatusMenu').style.display = 'none';
+                    document.getElementById('settingsButton').style.display = 'none';
+                    document.getElementById('controlpump').style.display = 'none';
+                    document.getElementById('editpermission').style.display = 'none';
+                } else if (statusValue === 1) {
+                    document.getElementById('requestMenu').style.display = 'none';
+                    document.getElementById('requestStatusMenu').style.display = 'none';
+                    document.getElementById('editpermission').style.display = 'none';
+                } else if (statusValue === 2) {
+                    document.getElementById('requestMenu').style.display = 'none';
+                }
+            }
+
+            // ฟังก์ชันสำหรับดึงค่า status จาก Firebase
+            function fetchUserStatusFromDatabase(uid) {
+                return fetch(`http://localhost:3000/api/users/${uid}`) // เรียก API เพื่อนำข้อมูลสถานะผู้ใช้
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        return {uid: data.uid , fname: data.fname, lname: data.lname , status: data.status , popupadmin: data.popupadmin};
+                    });
+            }
+
+            // เพิ่ม event listener ให้กับ requestMenu
+            document.getElementById('requestMenu').addEventListener('click', function(event) {
+                event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
+                window.location.href = `request-admin.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า request-admin พร้อมส่ง username
+            });
+
+            // เพิ่ม event listener ให้กับ respondLink
+            document.getElementById('requestStatusMenu').addEventListener('click', function(event) {
+                event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
+                window.location.href = `respond-admin.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า respond-admin
+            });
+
+            document.getElementById('profile').addEventListener('click', function(event) {
+                event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
+                window.location.href = `profiles.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า request-admin พร้อมส่ง username
+            });
+        
+
+            //Update Token
+            document.getElementById('submitToken').addEventListener('click', function() {
+                const tokenline = document.getElementById('tokenline').value; // ดึงค่า tokenline จากฟอร์ม
+
+                fetch('http://localhost:3000/api/update-tokenline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ uid, tokenline }) // ส่ง uid และ tokenline ไปที่ API
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message); // แสดงข้อความตอบกลับจาก API
+                    document.getElementById('adminPopup').style.display = 'none';
+                    document.getElementById('popupOverlay').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error updating tokenline:', error);
+                });
+            });
+
+        });
+
+        ////
+        document.addEventListener('DOMContentLoaded', function () {
+        const accountMenu = document.getElementById('accountMenu');
+        const dropdown = document.querySelector('.dropdown');
+
+        accountMenu.addEventListener('click', function (e) {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; // สลับการแสดงเมนูย่อย
+        });
+
+        // ปิดเมนูเมื่อคลิกนอกเมนู
+        window.addEventListener('click', function (e) {
+            if (!accountMenu.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none'; // ปิดเมนูย่อยเมื่อคลิกนอก
+            }
+        });
+    });
+    </script>
+</body>
+</html>

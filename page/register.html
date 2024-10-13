@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/register.css">
+    <title>Register Page</title>
+</head>
+<body>
+   <section>
+    <video src="/video/6194504-uhd_3840_2160_30fps.mp4" loop muted autoplay id="bg-video" type="video/mp4"></video>
+    <div class="box">
+        <div class="form-value">
+            <form id="registerForm">
+                <h2>สร้างบัญชี</h2>
+                <div class="input-field">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <input type="text" id="fname" required>
+                    <label for="fname">ชื่อ</label>
+                </div>
+                <div class="input-field">
+                    <ion-icon name=""></ion-icon>
+                    <input type="text" id="lname" required>
+                    <label for="lname">นามสกุล</label>
+                </div>
+                <div class="input-field">
+                    <ion-icon name="call-outline"></ion-icon>
+                    <input type="tel" id="phon" required>
+                    <label for="phon">Phone</label>
+                </div>
+                <div class="input-field">
+                    <ion-icon name="mail-outline"></ion-icon>
+                    <input type="email" id="email" required>
+                    <label for="email">Email</label>
+                </div>
+                <div class="input-field">
+                    <ion-icon name="lock-closed-outline"></ion-icon>
+                    <input type="password" id="password" required>
+                    <label for="password">Password</label>
+                </div>
+                <div class="input-field">
+                    <ion-icon name="lock-closed-outline"></ion-icon>
+                    <input type="password" id="confirmPassword" required>
+                    <label for="confirmPassword">Confirm Password</label>
+                </div>
+                <button type="submit">สร้างบัญชี</button>
+                <div class="register">
+                    <p>มีบัญชีเเล้วใช่ไหม?<a href="/page/login.html"> เข้าสู่ระบบ</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+   </section>
+
+   <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
+   <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
+
+   <!-- Firebase App (การเชื่อมต่อกับ Firebase) -->
+   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+
+   <!-- Firebase Authentication -->
+   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+
+   <!-- Firebase Realtime Database -->
+   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+   <script>
+       const firebaseConfig = {
+        apiKey: "AIzaSyAHb7c71eD80O8pF-l3JFqXiNaqMZb6xDI",
+        authDomain: "aeroponics-e15b0.firebaseapp.com",
+        databaseURL: "https://aeroponics-e15b0-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "aeroponics-e15b0",
+        storageBucket: "aeroponics-e15b0.appspot.com",
+        messagingSenderId: "810278392432",
+        appId: "1:810278392432:web:a91e7c0b98f5dc5b855ab5",
+        measurementId: "G-DK4EM20L5M"
+        };
+    
+       // เริ่ม Firebase
+       firebase.initializeApp(firebaseConfig);
+     </script>
+
+   <script>
+       document.getElementById('registerForm').addEventListener('submit', async (e) => {
+           e.preventDefault(); // ป้องกันการส่งฟอร์มแบบปกติ
+           
+           const fname = document.getElementById('fname').value;
+           const lname = document.getElementById('lname').value;
+           const phon = document.getElementById('phon').value;
+           const email = document.getElementById('email').value;
+           const password = document.getElementById('password').value;
+           const confirmPassword = document.getElementById('confirmPassword').value;
+
+           const response = await fetch('http://localhost:3000/api/register', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({
+                   fname,
+                   lname,
+                   phon,
+                   email,
+                   password,
+                   confirmPassword,
+               }),
+           });
+
+           const data = await response.json();
+           alert(data.message); // แสดงข้อความจากเซิร์ฟเวอร์
+
+           if (response.status === 201) {
+            window.location.href = '/page/login.html'; // เปลี่ยนเป็น URL ของหน้า login ของคุณ
+    }
+       });
+   </script>
+
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/request-admin.css">
+    <title>Request Admin</title>
+</head>
+<body>
+    <a href="#"><button id="backpage"><ion-icon name="arrow-back-outline"></ion-icon></button></a>
+    <button id="request-admin">ส่งคำขอเป็น Admin</button>
+    
+    <div id="requestStatus" style="margin-top: 20px;">
+        <h3>คำขอเป็นผู้ดูเเล</h3>
+        <ul id="requestList"></ul> <button id="cancel" >ยกเลิกคำขอ</button>
+        <div id="notification" style="display: none;">ตอนนี้คุณได้เป็นผู้ดูแลระบบแล้ว</div>
+    </div>
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close" class="close">&times;</span>
+            <h2>กรอกหมายเหตุ</h2>
+            <textarea id="note" rows="4" cols="50" placeholder="กรุณากรอกหมายเหตุที่นี่..."></textarea>
+            <br>
+            <button id="submit-note">ส่งหมายเหตุ</button>
+            <button id="cancel-note">ยกเลิก</button>
+        </div>
+    </div>
+
+    <script>
+        let isDeleting = false;
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const uid = urlParams.get('uid');
+            console.log("UID"+uid);
+
+            const requestButton = document.getElementById('request-admin'); // ดึงปุ่มส่งคำขอ
+            const notification = document.getElementById('notification'); // ดึง notification
+            const cancel = document.getElementById('cancel');
+
+            // ฟังก์ชันเพื่อโหลดคำขอของผู้ใช้
+            function loadRequests() {
+                if (uid) {
+                    fetch(`http://localhost:3000/api/requests/${uid}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                if (response.status === 404) {
+                                    // กรณีไม่พบคำขอ ให้แสดงข้อความว่า "ยังไม่มีคำขอ"
+                                    const requestList = document.getElementById('requestList');
+                                    requestList.innerHTML = '<li >ยังไม่มีคำขอ</li>'; // แสดงข้อความว่าไม่มีคำขอ
+                                    notification.style.display = 'none'; // ซ่อน notification เมื่อไม่มีคำขอ
+                                    cancel.style.display = 'none'; // ซ่อนปุ่ม cancel เมื่อไม่มีคำขอ
+                                    requestButton.style.display = 'block'; // แสดงปุ่มส่งคำขอเมื่อไม่มีคำขอ
+                                    return; // หยุดการทำงานของฟังก์ชัน
+                                }
+                                throw new Error(`HTTP error! Status: ${response.status}`); // โยนข้อผิดพลาดถ้าสถานะไม่ใช่ 404
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const requestList = document.getElementById('requestList');
+                            console.log(data);
+                                requestList.innerHTML = ''; // เคลียร์ข้อความว่าไม่มีคำขอ
+                                let hasPendingRequests = false; // ตัวแปรเพื่อตรวจสอบว่ามีคำขอที่กำลังดำเนินการอยู่หรือไม่
+
+                                if (data.length > 0) {
+                                    cancel.style.display = 'block'; // แสดงปุ่ม cancel เมื่อมีคำขอ
+                                } else {
+                                    cancel.style.display = 'none'; // ซ่อนปุ่ม cancel ถ้าไม่มีคำขอ
+                                }
+                                
+                                data.forEach(request => {
+                                    const li = document.createElement('li');
+                                    li.innerText = `คำขอเป็นผู้ดูเเลระบบ ชื่อ: ${request.fname} ${request.lname} สถานะ: ${request.status === 0 ? 'กำลังดำเนินการ' : 'เสร็จสิ้น'}`;
+                                    requestList.appendChild(li);
+
+                                     // เพิ่มปุ่มยกเลิกคำขอในแต่ละรายการ
+                                    const deleteButton = document.getElementById('cancel');
+                                    deleteButton.addEventListener('click', function() {
+                                        deleteRequest(request.uid); // เรียกฟังก์ชันลบคำขอ
+                                    });
+
+                                    if (request.status === 0) {
+                                        hasPendingRequests = false; 
+                                    }else{
+                                         hasPendingRequests = true;
+                                    }
+                                });
+
+                                // หากมีคำขออยู่แล้ว ให้ซ่อนปุ่มส่งคำขอ
+                                requestButton.style.display = 'none';
+                                
+                                
+                                // ตรวจสอบสถานะคำขอและแสดงข้อความถ้าจำเป็น
+                                if (hasPendingRequests) {
+                                    notification.style.display = 'block'; 
+                                    cancel.style.display = 'none';
+
+                                } else {
+                                    notification.style.display = 'none'; 
+                                }
+                            
+                        })
+                        .catch(error => {
+                            console.error('Error fetching requests:', error);
+                        });
+                } else {
+                    console.log('ไม่พบชื่อผู้ใช้ใน localStorage');
+                }
+            }
+
+            // ฟังก์ชันลบคำขอ
+            function deleteRequest(uid) {
+                if (isDeleting) return; // ถ้ากำลังลบอยู่ ไม่ให้ทำซ้ำ
+                isDeleting = true; // ตั้งสถานะการลบเป็น true
+
+                fetch(`http://localhost:3000/api/requests/delete/${uid}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message); // แสดงข้อความหลังจากลบคำขอ
+                    loadRequests(); // โหลดคำขออีกครั้งเพื่อแสดงผลลัพธ์
+                    isDeleting = false;
+                })
+                .catch(error => {
+                    console.error('Error deleting request:', error);
+                    isDeleting = false;
+                });
+            }
+
+            // สร้างตัวแปรสำหรับจัดการสถานะ modal
+            let isModalOpen = false;
+
+            // แสดงหน้าต่างกรอกหมายเหตุ
+            requestButton.addEventListener('click', function() {
+                const modal = document.getElementById('modal');
+                modal.style.display = 'flex'; // แสดงหน้าต่าง
+                isModalOpen = true; // เปลี่ยนสถานะ modal เป็นเปิด
+
+                const noteTextarea = document.getElementById('note');
+
+                // เคลียร์ข้อความเมื่อเปิด modal
+                noteTextarea.value = '';
+            });
+
+            // ส่งหมายเหตุเมื่อคลิกปุ่มส่ง
+            const submitButton = document.getElementById('submit-note');
+            submitButton.addEventListener('click', function() {
+                const noteTextarea = document.getElementById('note');
+                const note = noteTextarea.value; // ดึงค่าหมายเหตุ
+
+                fetch('http://localhost:3000/api/request-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ uid, note }) // ส่ง username และ note
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadRequests(); // โหลดคำขออีกครั้งเพื่อตรวจสอบว่ามีคำขอแล้ว
+                    const modal = document.getElementById('modal');
+                    modal.style.display = 'none'; 
+                })
+                .catch(error => {
+                    console.error('Error sending request:', error);
+                });
+            });
+
+            // ปิดหน้าต่างเมื่อคลิกปุ่มปิด
+            document.getElementById('close').onclick = function() {
+                const modal = document.getElementById('modal');
+                modal.style.display = 'none';
+                isModalOpen = false; // เปลี่ยนสถานะ modal เป็นปิด
+            };
+
+            // ปิดหน้าต่างเมื่อคลิกปุ่มยกเลิก
+            document.getElementById('cancel-note').onclick = function() {
+                const modal = document.getElementById('modal');
+                modal.style.display = 'none';
+                isModalOpen = false; // เปลี่ยนสถานะ modal เป็นปิด
+            };
+            // เรียกดูคำขอของผู้ใช้เมื่อโหลดหน้าเว็บ
+            loadRequests();
+
+            setInterval(loadRequests, 2000); // 5000 มิลลิวินาที = 5 วินาที
+
+            // เพิ่ม event listener ให้กับ respondLink
+        document.getElementById('backpage').addEventListener('click', function(event) {
+                event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
+                window.location.href = `home.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า
+            });
+        });
+    </script>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
+</body>
+</body>
+</html>
