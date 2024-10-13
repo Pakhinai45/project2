@@ -11,7 +11,7 @@ const admin = require('firebase-admin');
 const router = express.Router(); 
 
 // Firebase Admin SDK initialization
-const serviceAccount = require('../root/aeroponics-e15b0-firebase-adminsdk-xtym6-3388b06d43.json');
+const serviceAccount = require('../root/aeroponics-e15b0-firebase-adminsdk-xtym6-d539ca4798.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://aeroponics-e15b0-default-rtdb.asia-southeast1.firebasedatabase.app/'
