@@ -6,7 +6,7 @@ const sensorRoutes = require('./sensor'); // import sensor routes
 const accountRoutes = require('./account'); // import account routes
 const path = require('path');
 
-const PORT = 3000;
+const PORT = 3030;
 
 app.use(cors());
 app.use(bodyParser.json());
