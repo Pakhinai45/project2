@@ -4,7 +4,7 @@ document.getElementById('toggleButton').addEventListener('click', function() {
     const newState = !isOn;
 
     // ส่งค่า true/false ไปยัง server
-    fetch('http://192.168.102.198:3000/togglePump', {
+    fetch('https://project2-t1ot.onrender.com/togglePump', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ document.getElementById('toggleButton').addEventListener('click', function() {
 
 // Fetch sensor data and update water level
 function fetchSensorData() {
-    fetch('http://192.168.102.198:3000/data')
+    fetch('https://project2-t1ot.onrender.com/data')
         .then(response => response.json())
         .then(data => {
             console.log(data); // ตรวจสอบข้อมูลที่ได้รับจากเซิร์ฟเวอร์
@@ -233,7 +233,7 @@ function loopCycle() {
 
 // ฟังก์ชันสำหรับเปิด/ปิดปั๊มน้ำ
 function togglePump(state) {
-    fetch('http://192.168.102.198:3000/togglePump', {
+    fetch('https://project2-t1ot.onrender.com/togglePump', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
