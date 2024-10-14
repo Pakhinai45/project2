@@ -117,9 +117,9 @@ function updateLightIntensity(ldr) {
     let intensityText = '';
     
     if (ldr < 900) {
-        intensityText = 'แดดจัด';
+        intensityText = 'แดด';
     } else if (ldr < 2500) {
-        intensityText = 'แดดร่ม';
+        intensityText = 'ร่ม';
     } else if (ldr > 3000) {
         intensityText = 'มืด';
     }

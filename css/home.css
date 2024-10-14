@@ -61,6 +61,7 @@ main h2 {
     text-align: center;
 }
 
+/*-----------------------------------------------------------------------------------*/
 .water-level {
     margin: 10px 0;
 }
@@ -131,11 +132,13 @@ ion-icon{
     display: flex;
     align-items: center;
     gap: 10px;
+    justify-content: center;
 }
 
 .editable-text {
     font-size: 18px;
     display: inline-block;
+    
 }
 
 .edit-icon {
