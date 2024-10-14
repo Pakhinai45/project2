@@ -11,62 +11,67 @@
     <ul id="requestList">
         <!-- รายการคำขอจะถูกแสดงที่นี่ -->
     </ul>
-    
+
     <script type="module">
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get('uid');
 
-
-        // ฟังก์ชันเพื่อดึงคำขอทั้งหมด
+        // ฟังก์ชันดึงคำขอทั้งหมด
         function fetchRequests() {
-        fetch('https://project2-t1ot.onrender.com/api/requests') // API ดึงคำขอทั้งหมด
-            .then(response => response.json())
-            .then(data => {
-                const requestList = document.getElementById('requestList');
-                requestList.innerHTML = ''; // ล้างรายการคำขอเก่า
+            fetch('https://project2-t1ot.onrender.com/api/requests')
+                .then(response => response.json())
+                .then(data => {
+                    const requestList = document.getElementById('requestList');
+                    requestList.innerHTML = ''; // ล้างรายการคำขอเก่า
 
-                if (data.length === 0) {
-                    requestList.innerHTML = '<li>ไม่มีคำขอ</li>';
-                } else {
-                    data.forEach(request => {
-                        const formattedTimestamp = formatDateShort(request.timestamp); // แปลงวันที่
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            คำขอจากเป็นผู้ดูแลระบบจาก: ${request.fname} ${request.lname} เวลา: ${formattedTimestamp}   หมายเหตุ:${request.note}   สถานะ: ${request.status === 0 ? 'รอการอนุมัติ' : 'อนุมัตแล้ว'}
-                             ${request.status === 0 ? `<button onclick="approveRequest('${request.uid}')">อนุมัติ</button>` : ''}
-                            <button onclick="deleteRequest('${request.uid}')">ลบคำขอ</button>
-                        `;
-                        requestList.appendChild(li);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching requests:', error);
+                    if (data.length === 0) {
+                        requestList.innerHTML = '<li>ไม่มีคำขอ</li>';
+                    } else {
+                        data.forEach(request => {
+                            const formattedTimestamp = formatDateShort(request.timestamp); // แปลงวันที่
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                คำขอจากเป็นผู้ดูแลระบบจาก: ${request.fname} ${request.lname} เวลา: ${formattedTimestamp}   หมายเหตุ:${request.note}   สถานะ: ${request.status === 0 ? 'รอการอนุมัติ' : 'อนุมัตแล้ว'}
+                                 ${request.status === 0 ? `<button class="approve-btn" data-uid="${request.uid}">อนุมัติ</button>` : ''}
+                                <button class="delete-btn" data-uid="${request.uid}">ลบคำขอ</button>
+                            `;
+                            requestList.appendChild(li);
+                        });
+
+                        // Attach event listeners for approve and delete buttons after rendering
+                        document.querySelectorAll('.approve-btn').forEach(button => {
+                            button.addEventListener('click', function () {
+                                const uid = this.getAttribute('data-uid');
+                                approveRequest(uid);
+                            });
+                        });
+
+                        document.querySelectorAll('.delete-btn').forEach(button => {
+                            button.addEventListener('click', function () {
+                                const uid = this.getAttribute('data-uid');
+                                deleteRequest(uid);
+                            });
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching requests:', error);
+                });
+        }
+
+        // ฟังก์ชันแปลง timestamp เป็นเวลาท้องถิ่น
+        function formatDateShort(timestamp) {
+            const date = new Date(timestamp);
+
+            return date.toLocaleString('th-TH', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false // ใช้เวลาในรูปแบบ 24 ชั่วโมง
             });
-    }
-
-    // ฟังก์ชันแปลง timestamp เป็นเวลาท้องถิ่น
-    function formatDateShort(timestamp) {
-        const date = new Date(timestamp);
-
-        // ใช้ toLocaleString() เพื่อแปลงเป็นเวลาท้องถิ่น
-        return date.toLocaleString('th-TH', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false // ใช้เวลาในรูปแบบ 24 ชั่วโมง
-        });
-    }
-
-
-
-        // เรียกดูคำขอครั้งแรกเมื่อโหลดหน้า
-        document.addEventListener('DOMContentLoaded', function () {
-            fetchRequests(); // เรียกดูคำขอทันทีเมื่อโหลดหน้า
-            setInterval(fetchRequests, 2000); // ดึงคำขอทุก ๆ 2 วินาที
-        });
+        }
 
         // ฟังก์ชันอนุมัติคำขอ
         function approveRequest(uid) {
@@ -101,13 +106,21 @@
             });
         }
 
-             // เพิ่ม event listener ให้กับ respondLink
-            document.getElementById('backpage').addEventListener('click', function(event) {
-                event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
-                window.location.href = `home.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า
-            });
+        // เรียกดูคำขอครั้งแรกเมื่อโหลดหน้า
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchRequests(); // เรียกดูคำขอทันทีเมื่อโหลดหน้า
+            setInterval(fetchRequests, 2000); // ดึงคำขอทุก ๆ 2 วินาที
+        });
+
+        // เพิ่ม event listener ให้กับปุ่ม back
+        document.getElementById('backpage').addEventListener('click', function(event) {
+            event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
+            window.location.href = `home.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า
+        });
     </script>
+
     <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
 </body>
+
 </html>
