@@ -19,7 +19,7 @@
 
         // ฟังก์ชันเพื่อดึงคำขอทั้งหมด
         function fetchRequests() {
-        fetch('http://localhost:3030/api/requests') // API ดึงคำขอทั้งหมด
+        fetch('https://project2-t1ot.onrender.com/api/requests') // API ดึงคำขอทั้งหมด
             .then(response => response.json())
             .then(data => {
                 const requestList = document.getElementById('requestList');
@@ -70,7 +70,7 @@
 
         // ฟังก์ชันอนุมัติคำขอ
         function approveRequest(uid) {
-            fetch(`http://localhost:3030/api/requests/approve/${uid}`, {
+            fetch(`https://project2-t1ot.onrender.com/api/requests/approve/${uid}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -88,7 +88,7 @@
 
         // ฟังก์ชันลบคำขอ
         function deleteRequest(uid) {
-            fetch(`http://localhost:3030/api/requests/delete/${uid}`, {
+            fetch(`https://project2-t1ot.onrender.com/api/requests/delete/${uid}`, {
                 method: 'DELETE'
             })
             .then(response => response.json())

@@ -99,7 +99,7 @@
 
         // ฟังก์ชันสำหรับดึงค่า status จาก Firebase
         function fetchUserStatusFromDatabase(uid) {
-            return fetch(`http://localhost:3030/api/users/${uid}`) // เรียก API เพื่อนำข้อมูลสถานะผู้ใช้
+            return fetch(`https://project2-t1ot.onrender.com/api/users/${uid}`) // เรียก API เพื่อนำข้อมูลสถานะผู้ใช้
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -134,7 +134,7 @@
         });
 ///
         function updateUserStatusInDatabase(uid, updatedData) {
-            fetch(`http://localhost:3030/api/editusers/${uid}`, {
+            fetch(`https://project2-t1ot.onrender.com/api/editusers/${uid}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
