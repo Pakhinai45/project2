@@ -81,7 +81,7 @@
           const idToken = await userCredential.user.getIdToken();
 
           // ส่ง token ไปยัง backend เพื่อตรวจสอบ
-          const response = await fetch('http://localhost:3000/verify-token', {
+          const response = await fetch('http://localhost:3030/verify-token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -123,7 +123,7 @@
 
            const email = document.getElementById('resetEmail').value;
 
-           const response = await fetch('http://localhost:3000/api/reset-password', {
+           const response = await fetch('http://localhost:3030/api/reset-password', {
                method: 'POST',
                headers: {
                    'Content-Type': 'application/json',

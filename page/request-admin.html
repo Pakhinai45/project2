@@ -40,7 +40,7 @@
             // ฟังก์ชันเพื่อโหลดคำขอของผู้ใช้
             function loadRequests() {
                 if (uid) {
-                    fetch(`http://localhost:3000/api/requests/${uid}`)
+                    fetch(`http://localhost:3030/api/requests/${uid}`)
                         .then(response => {
                             if (!response.ok) {
                                 if (response.status === 404) {
@@ -113,7 +113,7 @@
                 if (isDeleting) return; // ถ้ากำลังลบอยู่ ไม่ให้ทำซ้ำ
                 isDeleting = true; // ตั้งสถานะการลบเป็น true
 
-                fetch(`http://localhost:3000/api/requests/delete/${uid}`, {
+                fetch(`http://localhost:3030/api/requests/delete/${uid}`, {
                     method: 'DELETE'
                 })
                 .then(response => {
@@ -154,7 +154,7 @@
                 const noteTextarea = document.getElementById('note');
                 const note = noteTextarea.value; // ดึงค่าหมายเหตุ
 
-                fetch('http://localhost:3000/api/request-admin', {
+                fetch('http://localhost:3030/api/request-admin', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

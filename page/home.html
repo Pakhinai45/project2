@@ -145,7 +145,7 @@
 
             // ฟังก์ชันเพื่ออัปเดตค่าฟิลด์ hasSeenAdminPopup
             function updateUserPopupStatus(uid) {
-                fetch(`http://localhost:3000/api/users/update/${uid}`, {
+                fetch(`http://localhost:3030/api/users/update/${uid}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -178,7 +178,7 @@
 
             // ฟังก์ชันสำหรับดึงค่า status จาก Firebase
             function fetchUserStatusFromDatabase(uid) {
-                return fetch(`http://localhost:3000/api/users/${uid}`) // เรียก API เพื่อนำข้อมูลสถานะผู้ใช้
+                return fetch(`http://localhost:3030/api/users/${uid}`) // เรียก API เพื่อนำข้อมูลสถานะผู้ใช้
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -212,7 +212,7 @@
             document.getElementById('submitToken').addEventListener('click', function() {
                 const tokenline = document.getElementById('tokenline').value; // ดึงค่า tokenline จากฟอร์ม
 
-                fetch('http://localhost:3000/api/update-tokenline', {
+                fetch('http://localhost:3030/api/update-tokenline', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
