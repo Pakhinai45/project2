@@ -76,7 +76,7 @@ router.post('/api/reset-password', async (req, res) => {
 });
 
 // Login user with token verification (without Admin SDK)
-router.post('https://project2-t1ot.onrender.com/verify-token', async (req, res) => {
+router.post('/verify-token', async (req, res) => {
     const { token } = req.body;
 
     try {
