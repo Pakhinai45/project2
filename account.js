@@ -1,21 +1,16 @@
-const { getDatabase, set, ref, get, child, remove, update } = require("firebase/database"); // เพิ่ม get และ child
-const { initializeApp } = require("firebase/app");
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { getAuth, createUserWithEmailAndPassword } = require('firebase/auth');
-const bcrypt = require('bcrypt');
-const { sendPasswordResetEmail } = require('firebase/auth');
-const admin = require('firebase-admin');
+import { getDatabase, set, ref, get, update, remove, child } from "firebase/database";
+import { initializeApp } from "firebase/app";
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import fetch from 'node-fetch'; // ใช้ fetch สำหรับการส่ง request ไปยัง Firebase API
 
-const router = express.Router(); 
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
-// Firebase Admin SDK initialization
-const serviceAccount = require('./root/aeroponics-e15b0-firebase-adminsdk-xtym6-d539ca4798.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://aeroponics-e15b0-default-rtdb.asia-southeast1.firebasedatabase.app/'
-});
+
+const router = express.Router();
+router.use(cors());
+router.use(bodyParser.json());
 
 const firebaseConfig = {
     apiKey: "AIzaSyAHb7c71eD80O8pF-l3JFqXiNaqMZb6xDI",
@@ -28,8 +23,6 @@ const firebaseConfig = {
     measurementId: "G-DK4EM20L5M"
   };
 
-router.use(cors());
-router.use(bodyParser.json());
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -37,49 +30,42 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // Register user
-router.post('/api/register', async (req, res) => {
-    const { fname,lname, phon, email, password, confirmPassword } = req.body;
-  
+export async function registerUser(userData) {
+    const { fname, lname, phon, email, password, confirmPassword } = userData;
+
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "รหัสผ่านไม่ตรงกัน!!!" });
+        return { status: 400, message: "รหัสผ่านไม่ตรงกัน!!!" };
     }
-  
+
     try {
-      const auth = getAuth();
-  
-      // สร้างบัญชี Firebase Authentication โดยใช้ email และ password
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const userId = userCredential.user.uid; // ดึง userId (UID) ของผู้ใช้จาก Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
 
-      // บันทึกข้อมูลผู้ใช้ลงใน Firebase Realtime Database
-      await set(ref(db, 'users/' + userId), {
-        userId: userId,       // บันทึก userId ลงในฐานข้อมูล
-        fname: fname,          // บันทึก username
-        lname:lname,
-        phon: phon,           // บันทึกหมายเลขโทรศัพท์
-        email: email,           // บันทึกอีเมล   
-        status: 0,            // สถานะของผู้ใช้
-        tokenline: "null",    // ค่าเริ่มต้นของ tokenline
-        popupadmin:false,
-        createdAt: new Date().toString() // วันเวลาที่สร้างบัญชี
-      });
-  
-      return res.status(201).json({ message: 'สร้างบัญชีสำเร็จ' });
-  
+        await set(ref(db, 'users/' + userId), {
+            userId: userId,
+            fname: fname,
+            lname: lname,
+            phon: phon,
+            email: email,
+            status: 0,
+            tokenline: "null",
+            popupadmin: false,
+            createdAt: new Date().toISOString()
+        });
+
+        return { status: 201, message: 'สร้างบัญชีสำเร็จ' };
     } catch (error) {
-      console.error('Error saving data:', error);
-      return res.status(500).json({ message: error.message });
+        console.error('Error saving data:', error);
+        return { status: 500, message: error.message };
     }
-  });
+}
 
-  // Request password reset
+// Request password reset
 router.post('/api/reset-password', async (req, res) => {
     const { email } = req.body;
 
     try {
-        const auth = getAuth();
-
-        // ส่งอีเมลเพื่อรีเซ็ตรหัสผ่าน
+        // ส่งอีเมลรีเซ็ตรหัสผ่าน
         await sendPasswordResetEmail(auth, email);
         return res.status(200).json({ message: 'อีเมลรีเซ็ตรหัสผ่านถูกส่งไปยัง ' + email });
 
@@ -89,39 +75,54 @@ router.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// Login user
+// Login user with token verification (without Admin SDK)
 router.post('/verify-token', async (req, res) => {
     const { token } = req.body;
-  
+
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      console.log(decodedToken); // เพิ่มการแสดงผลเพื่อดีบั๊ก
-      
-      const uid = decodedToken.uid;
-      const emailVerified = decodedToken.email_verified;
-
-       // ดึงข้อมูล status จาก Firebase Realtime Database
-       const userRef = admin.database().ref(`/users/${uid}/status`);
-       const statusSnapshot = await userRef.once('value');
-       const statusValue = statusSnapshot.val();
-
-       if (statusValue !== null) {
-        // ส่งค่า uid, status และหน้า page กลับไปที่ client
-        return res.status(200).json({ 
-            message: 'Login successful', 
-            uid: uid, 
-            status: statusValue, 
-            page: 'home.html' 
+        // ตรวจสอบโทเค็นโดยใช้ Firebase REST API
+        const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyAHb7c71eD80O8pF-l3JFqXiNaqMZb6xDI`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                idToken: token,
+            }),
         });
+
+        const data = await response.json();
+
+        if (data.users && data.users.length > 0) {
+            const user = data.users[0];
+            const uid = user.localId;  // Firebase User ID
+            const emailVerified = user.emailVerified;
+
+            // ดึงข้อมูล status จาก Firebase Realtime Database
+            const userRef = ref(db, `users/${uid}/status`);
+            const statusSnapshot = await get(userRef); // ใช้ get() สำหรับการอ่านค่า snapshot
+            const statusValue = statusSnapshot.val();
+
+            if (statusValue !== null) {
+                return res.status(200).json({
+                    message: 'Login successful',
+                    uid: uid,
+                    status: statusValue,
+                    page: 'home.html'
+                });
+            } else {
+                return res.status(400).json({ message: 'Status not found' });
+            }
         } else {
-            return res.status(400).json({ message: 'Status not found' });
+            return res.status(400).json({ message: 'Invalid token' });
         }
-  
+
     } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ message: 'Unauthorized' });
+        console.error('Error verifying token:', error);
+        return res.status(401).json({ message: 'Unauthorized' });
     }
 });
+
 
 // API สำหรับดึงค่า status ของผู้ใช้
 router.get('/api/users/:uid', async (req, res) => {
@@ -380,6 +381,4 @@ router.post('/api/update-tokenline', async (req, res) => {
     }
 });
 
-
-
-module.exports = router;
+export default router;

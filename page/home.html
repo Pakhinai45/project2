@@ -90,9 +90,9 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
     <!-- Link to external script -->
-    <script src="/script/home.js"></script>
-    <script>
-            document.addEventListener('DOMContentLoaded', function () {
+    <script type="module" src="/script/home.js"></script>
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', function () {
             // ดึงค่าจาก URL
             const urlParams = new URLSearchParams(window.location.search);
             const uid = urlParams.get('uid');
@@ -104,8 +104,8 @@
             if (uid) {
                 // ดึงค่า status ของผู้ใช้จาก Firebase โดยใช้ uid
                 fetchUserStatusFromDatabase(uid)
-                    .then(userData  => {
-                        const { uid, fname, lname, status , popupadmin } = userData;
+                    .then(userData => {
+                        const { uid, fname, lname, status, popupadmin } = userData;
 
                         //console.log('NOW IS --->:', uid, fname, lname, status , popupadmin);
 
@@ -113,8 +113,7 @@
 
                         // จัดการสถานะของผู้ใช้
                         handleStatus(parseInt(status));
-                        checkAndShowAdminNotification(uid,status,popupadmin);
-
+                        checkAndShowAdminNotification(uid, status, popupadmin);
                     })
                     .catch(error => {
                         console.error('Error fetching user status:', error);
@@ -124,8 +123,8 @@
             }
 
             // ฟังก์ชันตรวจสอบและแสดง popup เมื่อผู้ใช้กลายเป็น admin
-            function checkAndShowAdminNotification(uid,userStatus , popupadmin) {
-                if (userStatus === 1 && popupadmin === false ) { // ถ้าสถานะเป็น admin และยังไม่เคยเห็น popup
+            function checkAndShowAdminNotification(uid, userStatus, popupadmin) {
+                if (userStatus === 1 && popupadmin === false) { // ถ้าสถานะเป็น admin และยังไม่เคยเห็น popup
                     showAdminPopup(); // แสดง popup
                     updateUserPopupStatus(uid);
                 }
@@ -151,14 +150,13 @@
                         'Content-Type': 'application/json'
                     },
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                })
-                .catch(error => console.error('Error updating user status:', error));
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                    })
+                    .catch(error => console.error('Error updating user status:', error));
             }
-
 
             // ฟังก์ชันเพื่อจัดการค่า status
             function handleStatus(statusValue) {
@@ -186,30 +184,29 @@
                         return response.json();
                     })
                     .then(data => {
-                        return {uid: data.uid , fname: data.fname, lname: data.lname , status: data.status , popupadmin: data.popupadmin};
+                        return { uid: data.uid, fname: data.fname, lname: data.lname, status: data.status, popupadmin: data.popupadmin };
                     });
             }
 
             // เพิ่ม event listener ให้กับ requestMenu
-            document.getElementById('requestMenu').addEventListener('click', function(event) {
+            document.getElementById('requestMenu').addEventListener('click', function (event) {
                 event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
                 window.location.href = `request-admin.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า request-admin พร้อมส่ง username
             });
 
             // เพิ่ม event listener ให้กับ respondLink
-            document.getElementById('requestStatusMenu').addEventListener('click', function(event) {
+            document.getElementById('requestStatusMenu').addEventListener('click', function (event) {
                 event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
                 window.location.href = `respond-admin.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า respond-admin
             });
 
-            document.getElementById('profile').addEventListener('click', function(event) {
+            document.getElementById('profile').addEventListener('click', function (event) {
                 event.preventDefault(); // หยุดการทำงานเริ่มต้นของลิงก์
                 window.location.href = `profiles.html?uid=${uid}`; // เปลี่ยนเส้นทางไปยังหน้า request-admin พร้อมส่ง username
             });
-        
 
-            //Update Token
-            document.getElementById('submitToken').addEventListener('click', function() {
+            // Update Token
+            document.getElementById('submitToken').addEventListener('click', function () {
                 const tokenline = document.getElementById('tokenline').value; // ดึงค่า tokenline จากฟอร์ม
 
                 fetch('http://localhost:3030/api/update-tokenline', {
@@ -219,35 +216,36 @@
                     },
                     body: JSON.stringify({ uid, tokenline }) // ส่ง uid และ tokenline ไปที่ API
                 })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message); // แสดงข้อความตอบกลับจาก API
-                    document.getElementById('adminPopup').style.display = 'none';
-                    document.getElementById('popupOverlay').style.display = 'none';
-                })
-                .catch(error => {
-                    console.error('Error updating tokenline:', error);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message); // แสดงข้อความตอบกลับจาก API
+                        document.getElementById('adminPopup').style.display = 'none';
+                        document.getElementById('popupOverlay').style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error updating tokenline:', error);
+                    });
             });
 
         });
 
         ////
         document.addEventListener('DOMContentLoaded', function () {
-        const accountMenu = document.getElementById('accountMenu');
-        const dropdown = document.querySelector('.dropdown');
+            const accountMenu = document.getElementById('accountMenu');
+            const dropdown = document.querySelector('.dropdown');
 
-        accountMenu.addEventListener('click', function (e) {
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; // สลับการแสดงเมนูย่อย
-        });
+            accountMenu.addEventListener('click', function (e) {
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; // สลับการแสดงเมนูย่อย
+            });
 
-        // ปิดเมนูเมื่อคลิกนอกเมนู
-        window.addEventListener('click', function (e) {
-            if (!accountMenu.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.style.display = 'none'; // ปิดเมนูย่อยเมื่อคลิกนอก
-            }
+            // ปิดเมนูเมื่อคลิกนอกเมนู
+            window.addEventListener('click', function (e) {
+                if (!accountMenu.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none'; // ปิดเมนูย่อยเมื่อคลิกนอก
+                }
+            });
         });
-    });
     </script>
+
 </body>
 </html>

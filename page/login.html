@@ -23,6 +23,7 @@
                     <label for="password">Password</label>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
+                <div id="result" style="color: red; margin-top: 10px;"></div>
                 <div class="register">
                     <p>ยังไม่มีบัญชีใช่ไหม?<a href="/page/register.html"> สร้างบัญชี</a></p>
                 </div>
@@ -70,74 +71,71 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    // Event listener for login form submission
     document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          const idToken = await userCredential.user.getIdToken();
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const idToken = await userCredential.user.getIdToken();
 
-          // ส่ง token ไปยัง backend เพื่อตรวจสอบ
-          const response = await fetch('http://localhost:3030/verify-token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: idToken })
-          });
+                // Send token to backend for verification
+                const response = await fetch('http://localhost:3030/verify-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: idToken })
+                });
 
-          const data = await response.json();
-          if(response.ok){
-            const uid = data.uid;
-            const status = data.status;
-            window.location.href = `${data.page}?uid=${uid}`;
-          }
-          const resultDiv = document.getElementById('result');
-        } catch (error) {
-          console.error('Error:', error);
-        }
-      });
+                const data = await response.json();
+                if (response.ok) {
+                    const uid = data.uid;
+                    const status = data.status;
+                    window.location.href = `${data.page}?uid=${uid}`;
+                } else {
+                    document.getElementById('result').innerText = data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerText = error.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
+            }
+        });
+
+        // Show and hide reset password form
+        document.getElementById('resetPasswordLink').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent page refresh
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('resetPasswordForm').style.display = 'block';
+        });
+
+        document.getElementById('backToLoginLink').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent page refresh
+            document.getElementById('resetPasswordForm').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        });
+
+        // Reset password form submission
+        document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            const email = document.getElementById('resetEmail').value;
+
+            const response = await fetch('http://localhost:3030/api/reset-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            alert(data.message); // Display message from server
+        });
     });
    </script>
-
-   <script>
-       // แสดงและซ่อนฟอร์มรีเซ็ตรหัสผ่าน
-       document.getElementById('resetPasswordLink').addEventListener('click', function(event) {
-           event.preventDefault(); // ป้องกันการรีเฟรชหน้า
-           document.getElementById('login-form').style.display = 'none';
-           document.getElementById('resetPasswordForm').style.display = 'block';
-       });
-
-       document.getElementById('backToLoginLink').addEventListener('click', function(event) {
-           event.preventDefault(); // ป้องกันการรีเฟรชหน้า
-           document.getElementById('resetPasswordForm').style.display = 'none';
-           document.getElementById('login-form').style.display = 'block';
-       });
-
-       // ฟอร์มการรีเซ็ตรหัสผ่าน
-       document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
-           e.preventDefault(); // ป้องกันการส่งฟอร์มแบบปกติ
-
-           const email = document.getElementById('resetEmail').value;
-
-           const response = await fetch('http://localhost:3030/api/reset-password', {
-               method: 'POST',
-               headers: {
-                   'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({
-                   email,
-               }),
-           });
-
-           const data = await response.json();
-           alert(data.message); // แสดงข้อความจากเซิร์ฟเวอร์
-       });
-   </script>
-
-
 </body>
 </html>

@@ -1,5 +1,6 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+
 const router = express.Router();
 
 router.use(cors());
@@ -57,4 +58,4 @@ router.get('/data', async (req, res) => {
     res.json(sensorData);
 });
 
-module.exports = router; // Export router
+export default router; // Export router

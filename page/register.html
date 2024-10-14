@@ -54,34 +54,66 @@
    <script type="module" src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.esm.js"></script>
    <script nomodule src="https://unpkg.com/ionicons@7.1.2/dist/ionicons/ionicons.js"></script>
 
-   <!-- Firebase App (การเชื่อมต่อกับ Firebase) -->
-   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+   <!-- Firebase App -->
+   <script type="module">
+       // Import Firebase modules
+       import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js';
+       import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js';
+       import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-database.js';
 
-   <!-- Firebase Authentication -->
-   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-
-   <!-- Firebase Realtime Database -->
-   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-
-   <script>
+       // Firebase configuration
        const firebaseConfig = {
-        apiKey: "AIzaSyAHb7c71eD80O8pF-l3JFqXiNaqMZb6xDI",
-        authDomain: "aeroponics-e15b0.firebaseapp.com",
-        databaseURL: "https://aeroponics-e15b0-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "aeroponics-e15b0",
-        storageBucket: "aeroponics-e15b0.appspot.com",
-        messagingSenderId: "810278392432",
-        appId: "1:810278392432:web:a91e7c0b98f5dc5b855ab5",
-        measurementId: "G-DK4EM20L5M"
-        };
-    
-       // เริ่ม Firebase
-       firebase.initializeApp(firebaseConfig);
-     </script>
+           apiKey: "AIzaSyAHb7c71eD80O8pF-l3JFqXiNaqMZb6xDI",
+           authDomain: "aeroponics-e15b0.firebaseapp.com",
+           databaseURL: "https://aeroponics-e15b0-default-rtdb.asia-southeast1.firebasedatabase.app",
+           projectId: "aeroponics-e15b0",
+           storageBucket: "aeroponics-e15b0.appspot.com",
+           messagingSenderId: "810278392432",
+           appId: "1:810278392432:web:a91e7c0b98f5dc5b855ab5",
+           measurementId: "G-DK4EM20L5M"
+       };
 
-   <script>
+       // Initialize Firebase
+       const app = initializeApp(firebaseConfig);
+       const auth = getAuth(app);
+       const database = getDatabase(app);
+
+       // Register user function
+       async function registerUser(userData) {
+           const { fname, lname, phon, email, password, confirmPassword } = userData;
+
+           // Validate password
+           if (password !== confirmPassword) {
+               return { status: 400, message: "รหัสผ่านไม่ตรงกัน!!!" };
+           }
+
+           try {
+               // Create user with Firebase Authentication
+               const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+               const userId = userCredential.user.uid;
+
+               // Save user data to Firebase Realtime Database
+               await set(ref(database, 'users/' + userId), {
+                   userId: userId,
+                   fname: fname,
+                   lname: lname,
+                   phon: phon,
+                   email: email,
+                   status: 0,
+                   tokenline: "null",
+                   popupadmin: false,
+                   createdAt: new Date().toISOString()
+               });
+
+               return { status: 201, message: 'สร้างบัญชีสำเร็จ' };
+           } catch (error) {
+               console.error('Error saving data:', error);
+               return { status: 500, message: error.message };
+           }
+       }
+
        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-           e.preventDefault(); // ป้องกันการส่งฟอร์มแบบปกติ
+           e.preventDefault();
            
            const fname = document.getElementById('fname').value;
            const lname = document.getElementById('lname').value;
@@ -90,29 +122,13 @@
            const password = document.getElementById('password').value;
            const confirmPassword = document.getElementById('confirmPassword').value;
 
-           const response = await fetch('http://localhost:3030/api/register', {
-               method: 'POST',
-               headers: {
-                   'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({
-                   fname,
-                   lname,
-                   phon,
-                   email,
-                   password,
-                   confirmPassword,
-               }),
-           });
+           const data = await registerUser({ fname, lname, phon, email, password, confirmPassword });
+           alert(data.message);
 
-           const data = await response.json();
-           alert(data.message); // แสดงข้อความจากเซิร์ฟเวอร์
-
-           if (response.status === 201) {
-            window.location.href = '/page/login.html'; // เปลี่ยนเป็น URL ของหน้า login ของคุณ
-    }
+           if (data.status === 201) {
+               window.location.href = '/page/login.html';
+           }
        });
    </script>
-
 </body>
 </html>
